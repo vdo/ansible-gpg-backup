@@ -1,0 +1,9 @@
+---
+
+remote_backup_paths: []
+gpg_recipients: []
+gpg_keyserver: hkps://keys.openpgp.org
+gpg_import_keys: []
+remote_backup_temp_path: "/tmp"
+local_backup_temp_path: "/tmp"
+local_backup_destination: "./"

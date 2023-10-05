@@ -1,0 +1,9 @@
+---
+- name: Prepare
+  hosts: all
+  tasks:
+    - name: Test gnupg
+      ansible.builtin.shell:
+        cmd: gpg --version
+      changed_when: false
+      delegate_to: localhost

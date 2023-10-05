@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include vdo.gpg_backup"
+      ansible.builtin.include_role:
+        name: vdo.gpg_backup
+      vars:
+        remote_backup_paths:
+          - "/var/log/"
+        local_backup_destination: "~"
+        gpg_import_keys: 
+          - "DE4EFCA3E1AB9E41CE96CECB18C09E865EC948A1" 
+        gpg_recipients:
+          - "DE4EFCA3E1AB9E41CE96CECB18C09E865EC948A1"
+        gpg_keyserver: keyserver.ubuntu.com
