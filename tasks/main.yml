@@ -46,8 +46,6 @@
   with_items: "{{ remote_backup_paths }}"
   changed_when: false
 
-# TODO: Import keys when defined
-
 - name: Generate recipents list
   set_fact:
     gpg_recipients_params: "{{ gpg_recipients_params | default('') + '-r ' + item + ' '}}"
@@ -58,7 +56,7 @@
       set -o pipefail &&
       cat {{ local_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz
       | gpg --batch --trust-model always --encrypt {{ gpg_recipients_params }} -o {{ local_backup_destination }}/{{ backup_host_prefix }}_{{ item | replace('/', '_')
-      | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.pgp
+      | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.gpg
   with_items: "{{ remote_backup_paths }}"
   delegate_to: localhost
   vars:
