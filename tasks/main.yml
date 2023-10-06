@@ -4,7 +4,6 @@
   ansible.builtin.command:
     cmd: "{{ item }}"
   changed_when: false
-  delegate_to: localhost
   vars:
     ansible_become: false
   with_items:
@@ -17,7 +16,6 @@
   changed_when: false
   when:
     - (gpg_import_keys is defined) and (gpg_import_keys | length > 0)
-  delegate_to: localhost
 
 - name: Set backup random suffix
   ansible.builtin.set_fact:
@@ -27,47 +25,38 @@
   ansible.builtin.set_fact:
     backup_host_prefix: "{{ inventory_hostname | replace('.', '_') }}"
 
-- name: Create backup tarballs
-  ansible.builtin.command:
-    cmd: "tar czf {{ remote_backup_temp_path }}/{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz {{ item }}"
-  with_items: "{{ remote_backup_paths }}"
-  changed_when: false
-
-- name: Fetch tarballs
-  ansible.builtin.fetch:
-    src: "{{ remote_backup_temp_path }}/{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz"
-    dest: "{{ local_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz"
-    flat: true
-  with_items: "{{ remote_backup_paths }}"
-
-- name: Safely delete remote tarballs
-  ansible.builtin.command:
-    cmd: "shred -uz {{ remote_backup_temp_path }}/{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz"
-  with_items: "{{ remote_backup_paths }}"
-  changed_when: false
-
 - name: Generate recipents list
   set_fact:
     gpg_recipients_params: "{{ gpg_recipients_params | default('') + '-r ' + item + ' '}}"
   loop: "{{ gpg_recipients }}"
 
-- name: Encrypt backup files
-  ansible.builtin.shell: >
-      set -o pipefail &&
-      cat {{ local_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz
-      | gpg --batch --trust-model always --encrypt {{ gpg_recipients_params }} -o {{ local_backup_destination }}/{{ backup_host_prefix }}_{{ item | replace('/', '_')
-      | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.gpg
-  with_items: "{{ remote_backup_paths }}"
-  delegate_to: localhost
-  vars:
-    ansible_become: false
-  changed_when: false
+- block:
+  - name: Create backup tarballs
+    ansible.builtin.command:
+      cmd: "tar czf {{ remote_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz {{ item }}"
+    with_items: "{{ remote_backup_paths }}"
 
-- name: Safely delete local tarballs
-  ansible.builtin.command:
-    cmd: "shred -uz {{ local_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz"
-  with_items: "{{ remote_backup_paths }}"
-  delegate_to: localhost
-  vars:
-    ansible_become: false
-  changed_when: false
+  - name: Encrypt backup files
+    ansible.builtin.shell:
+      executable: /bin/bash
+      cmd: >
+        set -o pipefail &&
+        cat {{ remote_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz
+        | gpg --batch --trust-model always --encrypt {{ gpg_recipients_params }} -o {{ remote_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_')
+        | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.gpg
+    with_items: "{{ remote_backup_paths }}"
+
+  - name: Fetch tarballs
+    ansible.builtin.fetch:
+      src: "{{ remote_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.gpg"
+      dest: "{{ local_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.tgz.gpg"
+      flat: true
+    with_items: "{{ remote_backup_paths }}"
+
+  always:
+  - name: Safely delete remote tarballs
+    ansible.builtin.shell:
+      cmd: |
+        shred -uz {{ remote_backup_temp_path }}/{{ backup_host_prefix }}_{{ item | replace('/', '_') | replace('*', '@') }}_{{ backup_random_suffix }}.*
+    with_items: "{{ remote_backup_paths }}"
+    ignore_errors: true

@@ -1,0 +1,29 @@
+---
+name: Check Molecule
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  molecule-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install pip dependencies 🐍
+        uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            molecule
+            podman
+            python-vagrant 
+            ansible-lint
+            flake8
+            molecule[lint]
+            molecule-plugins[podman]
+      - name: Checkout code 🏁
+        uses: actions/checkout@v3
+      - name: Molecule ⚛️
+        run: molecule converge
+        env:
+          ANSIBLE_FORCE_COLOR: "1"

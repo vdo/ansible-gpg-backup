@@ -3,7 +3,7 @@
   hosts: all
   tasks:
     - name: List generated backups
-      ansible.builtin.shell: "ls -l ~/*.age"
+      ansible.builtin.shell: "ls -l tmp/*.gpg"
       delegate_to: localhost
       changed_when: false
       register: ls

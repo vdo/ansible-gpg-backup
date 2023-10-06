@@ -8,9 +8,11 @@
       vars:
         remote_backup_paths:
           - "/var/log/"
-        local_backup_destination: "~"
+        local_backup_destination: "/tmp"
+        gpg_keyserver: keyserver.ubuntu.com
         gpg_import_keys: 
-          - "DE4EFCA3E1AB9E41CE96CECB18C09E865EC948A1" 
+          - "DE4EFCA3E1AB9E41CE96CECB18C09E865EC948A1"
+          - "5EEA4BE21AD9FF15CD273691482E9FBB61B3DB0C"
         gpg_recipients:
           - "DE4EFCA3E1AB9E41CE96CECB18C09E865EC948A1"
-        gpg_keyserver: keyserver.ubuntu.com
+          - "5EEA4BE21AD9FF15CD273691482E9FBB61B3DB0C"

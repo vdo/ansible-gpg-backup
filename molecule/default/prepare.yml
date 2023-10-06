@@ -2,6 +2,12 @@
 - name: Prepare
   hosts: all
   tasks:
+    - name: Install dirmngr
+      ansible.builtin.apt:
+        package:
+          - dirmngr
+        update_cache: true
+
     - name: Test gnupg
       ansible.builtin.shell:
         cmd: gpg --version
